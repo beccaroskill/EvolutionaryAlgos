@@ -232,7 +232,8 @@ class VisualizeSearch:
         plt.legend(loc='lower right')
     
     def plot_animation(data, save_path, get_frames_f, get_frames_args):
-        best_specimen = get_frames_f(*get_frames_args)
+        df, best_specimen = get_frames_f(*get_frames_args)
+        best_scores = df['best_scores']
         
         X = [x_val for x_val, _ in data]
         Y = [y_val for _, y_val in data]
@@ -241,6 +242,7 @@ class VisualizeSearch:
         
         fig, ax = plt.subplots()
         ln, = plt.plot([], [], 'orange')
+        global mse
         mse = float('inf')
         
         def init():
@@ -251,7 +253,7 @@ class VisualizeSearch:
         def update(i):
             global mse
             if best_specimen[i]:
-                spec = best_specimen[i][0]
+                spec = best_specimen[i]
                 Y_f = [spec.evaluate_at(x)[1] for x in X]
                 plt.cla()
                 ln.set_data(X, Y_f)
@@ -259,7 +261,7 @@ class VisualizeSearch:
                 ax.set_ylim(*y_lim)
                 plt.plot(X, Y, c='b')
                 plt.plot(X, Y_f, c='orange')
-                mse = round(best_specimen[i][1], 2)
+                mse = round(best_scores[i], 2)
             title = 'Best fit function, mse={} (Trial {})'.format(mse, i+1)
             plt.title(title)
             return ln,
@@ -393,7 +395,8 @@ class SearchAlgorithms:
         # Prep data storage for trials
         trials = range(n_trials + 1)
         best_scores = [float('inf')]
-        best_specimen = None
+        best_specimen = [None]
+        best_speciman = None
         
         for i in range(n_trials):
             if show_output and i % (n_trials / 10) == 0:
@@ -409,14 +412,16 @@ class SearchAlgorithms:
             # Update best score
             if score < best_scores[-1]:
                 best_scores += [score]
-                best_specimen = specimen
+                best_specimen += [specimen]
+                best_speciman = specimen
             else:
                 best_scores += [best_scores[-1]]
+                best_specimen += [None]
         
         # Plot best and worst path found over trials
         if plot:
             plt.figure(figsize=(6, 6))
-            VisualizeSearch.plot_f(best_specimen, data)
+            VisualizeSearch.plot_f(best_speciman, data)
             plt.show()
         
         # Compile data
@@ -434,15 +439,19 @@ class SearchAlgorithms:
         specimen = [trial_specimen for _, trial_specimen in results]
         trials = range(n_trials + 1)
         best_scores = [float('inf')]
+        best_specimen = [None]
+        
         for i in range(n_trials):
             trial_df = trial_dfs[i]
             trial_specimen = specimen[i]
             trial_score = trial_df['best_scores'].to_list()[-1]
             if trial_score < best_scores[-1]:
                 best_scores += [trial_score]
-                best_specimen = trial_specimen
+                best_specimen += [trial_specimen]
             else:
                 best_scores += [best_scores[-1]]
+                best_specimen += [None]
+
                 
         # Plot best and worst path found over trials
         if plot:
@@ -462,7 +471,8 @@ class SearchAlgorithms:
         # Prep data storage for trials
         trials = range(n_trials + 1)
         best_scores = [float('inf')]
-        best_specimen = None
+        best_specimen = [None]
+        best_speciman = None
         
         for i in range(n_trials):
             if show_output and i % (n_trials / 10) == 0:
@@ -472,23 +482,25 @@ class SearchAlgorithms:
             # Get a random expression as a heap, evaluate against data
             real = False
             while not real:
-                if best_specimen:
-                    specimen = self.get_mutation(best_specimen)  
+                if best_specimen[-1]:
+                    speciman = self.get_mutation(best_speciman)  
                 else:
-                    specimen = self.get_random_heap()
-                real, score = specimen.evaluate(data)
+                    speciman = self.get_random_heap()
+                real, score = speciman.evaluate(data)
             
             # Update best score
             if score < best_scores[-1]:
                 best_scores += [score]
-                best_specimen = specimen
+                best_specimen += [speciman]
+                best_speciman = speciman
             else:
                 best_scores += [best_scores[-1]]
-        
+                best_specimen += [None]
+
         # Plot best and worst path found over trials
         if plot:
             plt.figure(figsize=(6, 6))
-            VisualizeSearch.plot_f(best_specimen, data)
+            VisualizeSearch.plot_f(best_speciman, data)
             plt.show()
         
         # Compile data
@@ -496,36 +508,6 @@ class SearchAlgorithms:
                                   'best_scores': best_scores})
         return (trials_df, best_specimen)
     
-    def get_rmhc_frames(self, data, n_trials, n_frames=500):
-
-        # Prep data storage for trials
-        frames = []
-        best_scores = [float('inf')]
-        best_specimen = None
-        
-        for i in range(n_trials):
-            if i % (n_trials / 10) == 0:
-                print ('Trial', i, 'of', n_trials)
-                print ('Best score', round(best_scores[-1], 2))
-            # Get a random expression as a heap, evaluate against data
-            real = False
-            while not real:
-                if best_specimen:
-                    specimen = self.get_mutation(best_specimen)  
-                else:
-                    specimen = self.get_random_heap()
-                real, score = specimen.evaluate(data)
-            
-            # Update best score
-            if score < best_scores[-1]:
-                best_scores += [score]
-                best_specimen = specimen
-                frames += [(best_specimen, best_scores[-1])]
-            else:
-                best_scores += [best_scores[-1]]
-                frames += [None]
-
-        return frames
     
 def load_dataset(path):
     # Load dataset from .txt file
@@ -541,7 +523,7 @@ if __name__ == "__main__":
     random_search = SearchAlgorithms()
 
     VisualizeSearch.plot_animation(dataset, 'figs/rmhc_animation_2.gif', 
-                                   random_search.get_rmhc_frames, 
+                                   random_search.run_rmhc, 
                                    [dataset, n_trials])
     
     # for i in range(1, 6):

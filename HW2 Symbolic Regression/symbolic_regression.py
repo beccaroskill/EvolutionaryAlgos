@@ -274,7 +274,7 @@ class VisualizeSearch:
 class SearchAlgorithms:
     
     # min, max of uniform distribution for number of operations
-    default_n_ops_dist = [3, 6] 
+    default_n_ops_dist = [3, 128]
     
     # min, max of uniform distribution for coefficients
     default_coef_dist = [-10, 10]
@@ -310,7 +310,7 @@ class SearchAlgorithms:
             op = ops.pop(0)
             heap[i] = op
             parent_indices += [2*i+1] 
-            coef = round(random.uniform(*self.coef_dist), 2)
+            coef = round(random.uniform(*self.coef_dist), 6)
             swap = random.choice([True, False])
             left = 'x' if not swap else coef
             right = coef if not swap else 'x'

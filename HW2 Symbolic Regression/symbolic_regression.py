@@ -276,7 +276,7 @@ class VisualizeSearch:
 class SearchAlgorithms:
     
     # min, max of uniform distribution for number of operations
-    default_n_ops_dist = [3, 128]
+    default_n_ops_dist = [3, 6]
     
     # min, max of uniform distribution for coefficients
     default_coef_dist = [-10, 10]
@@ -427,6 +427,7 @@ class SearchAlgorithms:
         # Compile data
         trials_df = pd.DataFrame({'trial': trials, 
                                   'best_scores': best_scores})
+        best_specimen[-1] = best_speciman
         return (trials_df, best_specimen)
     
     def run_random_parallel(self, data, n_trials, plot=True):
@@ -440,19 +441,20 @@ class SearchAlgorithms:
         trials = range(n_trials + 1)
         best_scores = [float('inf')]
         best_specimen = [None]
+        best_speciman = None
         
         for i in range(n_trials):
             trial_df = trial_dfs[i]
-            trial_specimen = specimen[i]
+            trial_speciman = specimen[i]
             trial_score = trial_df['best_scores'].to_list()[-1]
             if trial_score < best_scores[-1]:
                 best_scores += [trial_score]
-                best_specimen += [trial_specimen]
+                best_specimen += [trial_speciman]
             else:
                 best_scores += [best_scores[-1]]
                 best_specimen += [None]
+                best_speciman = trial_speciman
 
-                
         # Plot best and worst path found over trials
         if plot:
             plt.figure(figsize=(6, 6))
@@ -462,9 +464,10 @@ class SearchAlgorithms:
         # Compile data
         trials_df = pd.DataFrame({'trial': trials, 
                                   'best_scores': best_scores})
+        best_specimen[-1] = best_speciman
         return (trials_df, best_specimen)
     
-    def run_rmhc(self, data, n_trials, plot=True, show_output=True):
+    def run_rmhc(self, data, n_trials, restart=None, plot=True, show_output=True):
         if show_output:
             print ('RMHC Search with', n_trials, 'trials')
         
@@ -482,10 +485,10 @@ class SearchAlgorithms:
             # Get a random expression as a heap, evaluate against data
             real = False
             while not real:
-                if best_specimen[-1]:
-                    speciman = self.get_mutation(best_speciman)  
-                else:
+                if i % restart == 0:
                     speciman = self.get_random_heap()
+                else:
+                    speciman = self.get_mutation(best_speciman)  
                 real, score = speciman.evaluate(data)
             
             # Update best score
@@ -506,6 +509,7 @@ class SearchAlgorithms:
         # Compile data
         trials_df = pd.DataFrame({'trial': trials, 
                                   'best_scores': best_scores})
+        best_specimen[-1] = best_speciman
         return (trials_df, best_specimen)
     
     
@@ -518,21 +522,22 @@ def load_dataset(path):
 if __name__ == "__main__":
 
     dataset = load_dataset('data.txt')
-    n_trials = 1000
+    n_trials = 100000
 
     random_search = SearchAlgorithms()
 
-    VisualizeSearch.plot_animation(dataset, 'figs/rmhc_animation_2.gif', 
-                                   random_search.run_rmhc, 
-                                   [dataset, n_trials])
+    # VisualizeSearch.plot_animation(dataset, 'figs/rmhc_animation_2.gif', 
+    #                                random_search.run_rmhc, 
+    #                                [dataset, n_trials])
     
-    # for i in range(1, 6):
-    #     df, best_specimen = random_search.run_rmhc(dataset, n_trials, plot=True)
-    #     df.to_csv('results/rmhc/n{}_i{}.csv'.format(n_trials, i))
-    #     print(best_specimen.to_expr(), 'MSE', df['best_scores'].to_list()[-1])
-    #     plt.figure(figsize=(6, 6))
-    #     VisualizeSearch.plot_f(best_specimen, dataset)
-    #     plt.show()        
+    for i in range(1, 6):
+        df, best_specimen = random_search.run_rmhc(dataset, n_trials, 
+                                                   restart=int(n_trials/10), plot=True)
+        df.to_csv('results/rmhc/n{}_i{}.csv'.format(n_trials, i))
+        print(best_specimen[-1].to_expr(), 'MSE', df['best_scores'].to_list()[-1])
+        plt.figure(figsize=(6, 6))
+        VisualizeSearch.plot_f(best_specimen[-1], dataset)
+        plt.show()        
         
     # VisualizeSearch.plot_trials('results/rmhc/', 'n{}'.format(n_trials), 
     #                             'rmhc', 'RMHC Search', ylim=(0,100))

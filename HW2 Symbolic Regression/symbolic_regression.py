@@ -282,7 +282,7 @@ class VisualizeSearch:
 class SearchAlgorithms:
     
     # min, max of uniform distribution for number of operations
-    default_n_ops_dist = [6, 8]
+    default_n_ops_dist = [6, 64]
     
     # min, max of uniform distribution for coefficients
     default_coef_dist = [-10, 10]

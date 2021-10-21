@@ -1,0 +1,1 @@
+Add(Mul(sin(x), Pow(Mul(-3.27, Pow(x, -1)), -1)), Add(x, Mul(-1, Mul(Add(x, 1.7), Pow(2.84, -1))))), MSE: 0.33990897672942827

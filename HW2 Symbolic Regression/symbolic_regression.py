@@ -579,7 +579,7 @@ def load_dataset(path):
 if __name__ == "__main__":
 
     dataset = load_dataset('data.txt')
-    n_trials = 10000
+    n_trials = 100000
 
     random_search = SearchAlgorithms()
 
@@ -587,29 +587,31 @@ if __name__ == "__main__":
     #                                random_search.run_rmhc, 
     #                                [dataset, n_trials])
     
-    # for i in range(1, 2):
-    #     df, best_specimen = random_search.run_rmhc_parallel(dataset, n_trials, 
-    #                                                         restart=int(n_trials/50), 
+    # for i in range(1, 6):
+    #     df, best_specimen = random_search.run_random_parallel(dataset, n_trials, 
     #                                                         num_nodes=None,
     #                                                         plot=True)
-    #     df.to_csv('results/rmhc/n{}_i{}.csv'.format(n_trials, i))
+    #     df.to_csv('results/random/n{}_i{}.csv'.format(n_trials, i))
     #     print(best_specimen[-1].to_expr(), 'MSE', df['best_scores'].to_list()[-1])
     #     plt.figure(figsize=(6, 6))
     #     VisualizeSearch.plot_f(best_specimen[-1], dataset)
-    #     plt.show() 
-        
-    for i in range(21, 22):
-        df, best_specimen = random_search.run_random_parallel(dataset, n_trials, 
+    #     plt.show()  
+    
+    for i in range(1, 6):
+        df, best_specimen = random_search.run_rmhc_parallel(dataset, n_trials, 
+                                                            restart=int(n_trials/100), 
                                                             num_nodes=None,
                                                             plot=True)
-        df.to_csv('results/random/n{}_i{}.csv'.format(n_trials, i))
+        df.to_csv('results/rmhc_100restarts/n{}_i{}.csv'.format(n_trials, i))
         print(best_specimen[-1].to_expr(), 'MSE', df['best_scores'].to_list()[-1])
         plt.figure(figsize=(6, 6))
         VisualizeSearch.plot_f(best_specimen[-1], dataset)
-        plt.show()  
+        plt.show() 
         
-    # VisualizeSearch.plot_trials('results/rmhc/', 'n{}'.format(n_trials), 
-    #                             'rmhc', 'RMHC Search', ylim=(0,100))
+
+        
+    # VisualizeSearch.plot_trials('results/rmhc/', 'n{}'.format(10000), 
+    #                             'rmhc (100 restarts)', 'RMHC Search', ylim=(0,100))
     # VisualizeSearch.plot_trials('results/random/', 'n{}'.format(n_trials), 
     #                             'random', 'Random Search', ylim=(0,100))
     

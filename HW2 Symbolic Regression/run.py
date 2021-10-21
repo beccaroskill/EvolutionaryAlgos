@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 if __name__ == "__main__":
 
     dataset = load_dataset('data.txt')
-    n_trials = 100
+    n_trials = 100000
 
     random_search = SearchAlgorithms()
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
         df, best_specimen = random_search.run_random_parallel(dataset, n_trials, 
                                                             num_nodes=None,
                                                             plot=True)
-        results_subdir = 'results/random_ops6to64'
+        results_subdir = 'results/random_depth3to8'
         df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))
         expression_summary = '{}, MSE: {}'.format(best_specimen[-1].to_expr(),
                                                   df['best_scores'].to_list()[-1])
@@ -30,7 +30,7 @@ if __name__ == "__main__":
                                                             restart=int(n_trials/100), 
                                                             num_nodes=None,
                                                             plot=True)
-        results_subdir = 'results/rmhc_100restarts_ops6to64'
+        results_subdir = 'results/rmhc_100restarts_depth3to8'
         df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))
         expression_summary = '{}, MSE: {}'.format(best_specimen[-1].to_expr(),
                                                   df['best_scores'].to_list()[-1])

@@ -282,7 +282,7 @@ class VisualizeSearch:
 class SearchAlgorithms:
     
     # min, max of uniform distribution for number of operations
-    default_n_ops_dist = [6, 64]
+    default_depth_dist = [3, 8]
     
     # min, max of uniform distribution for coefficients
     default_coef_dist = [-10, 10]
@@ -294,11 +294,11 @@ class SearchAlgorithms:
     default_operator_weights = [1/len(ExpressionHeap.valid_operators) 
                                 for op in ExpressionHeap.valid_operators]
         
-    def __init__(self, n_ops_dist=None, coef_dist=None,
+    def __init__(self, depth_dist=None, coef_dist=None,
                  var_ratio=None, operator_weights=None):
         
-        if n_ops_dist is None:
-            self.n_ops_dist = SearchAlgorithms.default_n_ops_dist               
+        if depth_dist is None:
+            self.depth_dist = SearchAlgorithms.default_depth_dist               
         if coef_dist is None:
             self.coef_dist = SearchAlgorithms.default_coef_dist        
         if var_ratio is None:
@@ -307,25 +307,28 @@ class SearchAlgorithms:
             self.operator_weights = SearchAlgorithms.default_operator_weights
     
     def get_random_heap(self):
-        n_ops = random.randint(*self.n_ops_dist)
+        depth = random.randint(*self.depth_dist)
+        depth_last_parent = depth-1
         ops = random.choices(ExpressionHeap.valid_operators, 
-                             weights=self.operator_weights, k=n_ops)
-        heap = [None] * (n_ops * 2)
-        
+                             weights=self.operator_weights, k=2**depth_last_parent)
+        heap = [None] * (2**depth-1)
         parent_indices = [0]
-        while ops:
+        while parent_indices:
             i = parent_indices.pop(0)
             op = ops.pop(0)
             heap[i] = op
-            parent_indices += [2*i+1] 
-            coef = round(random.uniform(*self.coef_dist), 6)
-            swap = random.choice([True, False])
-            left = 'x' if not swap else coef
-            right = coef if not swap else 'x'
-            while 2*i+2 >= len(heap):
-                heap += [None]
-            heap[2*i+1] = left
-            heap[2*i+2] = right
+            children_get_ops = random.uniform(0,1) < 0.9 and i<2**(depth_last_parent-1)-1
+            if children_get_ops:
+                parent_indices += [2*i+1, 2*i+2] 
+            else:
+                coef = round(random.uniform(*self.coef_dist), 2)
+                swap = random.choice([True, False])
+                left = 'x' if not swap else coef
+                right = coef if not swap else 'x'
+                while 2*i+2 >= len(heap):
+                    heap += [None]
+                heap[2*i+1] = left
+                heap[2*i+2] = right
         return ExpressionHeap(heap=heap)
     
     def change_coef(self, specimen):
@@ -381,11 +384,10 @@ class SearchAlgorithms:
         return mutation
     
     def get_mutation(self, specimen):    
-        num_ops = len([i for i, x in enumerate(specimen.heap) 
-                          if x and x in ExpressionHeap.valid_operators])
-        if num_ops < self.n_ops_dist[0]:
+        depth = np.log2(max([i for i, x in enumerate(specimen.heap) if x]))
+        if depth < self.depth_dist[0]:
             mutation_fs = [self.add_subtree]
-        elif num_ops > self.n_ops_dist[1]:
+        elif depth > self.depth_dist[1]:
             mutation_fs = [self.remove_subtree]
         else:
             mutation_fs = [self.change_coef, self.change_operator,

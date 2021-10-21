@@ -8,6 +8,7 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 import os
 import pandas as pd
 from pathos.multiprocessing import ProcessPool
+import tqdm
 
 class ExpressionHeap:
     
@@ -276,7 +277,7 @@ class VisualizeSearch:
 class SearchAlgorithms:
     
     # min, max of uniform distribution for number of operations
-    default_n_ops_dist = [3, 6]
+    default_n_ops_dist = [6, 8]
     
     # min, max of uniform distribution for coefficients
     default_coef_dist = [-10, 10]
@@ -406,14 +407,14 @@ class SearchAlgorithms:
             # Get a random expression as a heap, evaluate against data
             real = False
             while not real:
-                specimen = self.get_random_heap()
-                real, score = specimen.evaluate(data)
+                speciman = self.get_random_heap()
+                real, score = speciman.evaluate(data)
             
             # Update best score
             if score < best_scores[-1]:
                 best_scores += [score]
-                best_specimen += [specimen]
-                best_speciman = specimen
+                best_specimen += [speciman]
+                best_speciman = speciman
             else:
                 best_scores += [best_scores[-1]]
                 best_specimen += [None]
@@ -430,12 +431,15 @@ class SearchAlgorithms:
         best_specimen[-1] = best_speciman
         return (trials_df, best_specimen)
     
-    def run_random_parallel(self, data, n_trials, plot=True):
-        pool = ProcessPool(nodes=8)
-        results = pool.map(self.run_random, [data for i in range(n_trials)], 
-                            [1 for i in range(n_trials)],
-                            [False for i in range(n_trials)],
-                            [False for i in range(n_trials)])
+    def run_random_parallel(self, data, n_trials, num_nodes=None, plot=True):
+        with ProcessPool(nodes=num_nodes) as pool:
+            results = list(tqdm.tqdm(pool.imap(self.run_random, 
+                                              [data for i in range(n_trials)], 
+                                              [1 for i in range(n_trials)],
+                                              [False for i in range(n_trials)],
+                                              [False for i in range(n_trials)]), 
+                                     total=n_trials))
+            
         trial_dfs = [trial_df for trial_df, _ in results]
         specimen = [trial_specimen for _, trial_specimen in results]
         trials = range(n_trials + 1)
@@ -445,20 +449,20 @@ class SearchAlgorithms:
         
         for i in range(n_trials):
             trial_df = trial_dfs[i]
-            trial_speciman = specimen[i]
+            trial_speciman = specimen[i][-1]
             trial_score = trial_df['best_scores'].to_list()[-1]
             if trial_score < best_scores[-1]:
                 best_scores += [trial_score]
                 best_specimen += [trial_speciman]
+                best_speciman = trial_speciman
             else:
                 best_scores += [best_scores[-1]]
                 best_specimen += [None]
-                best_speciman = trial_speciman
 
         # Plot best and worst path found over trials
         if plot:
             plt.figure(figsize=(6, 6))
-            VisualizeSearch.plot_f(best_specimen, data)
+            VisualizeSearch.plot_f(best_speciman, data)
             plt.show()        
         
         # Compile data
@@ -485,7 +489,7 @@ class SearchAlgorithms:
             # Get a random expression as a heap, evaluate against data
             real = False
             while not real:
-                if i % restart == 0:
+                if best_speciman is None or restart and i % restart == 0:
                     speciman = self.get_random_heap()
                 else:
                     speciman = self.get_mutation(best_speciman)  
@@ -512,6 +516,59 @@ class SearchAlgorithms:
         best_specimen[-1] = best_speciman
         return (trials_df, best_specimen)
     
+
+    def run_rmhc_parallel(self, data, n_trials, restart=None, 
+                          num_nodes=4, plot=True):
+        # Prep params
+        num_batches = int(n_trials / restart)
+        batch_leftover = n_trials % restart
+        pool_n_trials = [restart for i in range(num_batches)] 
+        pool_n_trials += [batch_leftover] if batch_leftover else []
+        if batch_leftover:
+            num_batches += 1
+        pool_params = [[data for i in range(num_batches)],   # dataset
+                       pool_n_trials,                        # trial nums
+                       [None for i in range(num_batches)],   # no restart
+                       [False for i in range(num_batches)],  # suppress plotting
+                       [False for i in range(num_batches)]]  # suppress output
+        
+        # Run parallel processes
+        with ProcessPool(nodes=num_nodes) as pool:
+            results = list(tqdm.tqdm(pool.imap(self.run_rmhc, *pool_params), 
+                                total=num_batches))
+
+        trial_dfs = [trial_df for trial_df, _ in results]
+        trial_specimen = [trial_speciman for _, trial_speciman in results]
+        all_trials = range(n_trials + num_batches + 1)
+        all_best_scores = [float('inf')]
+        all_best_specimen = [None]
+        best_speciman = None
+        
+        for i in range(num_batches):
+            df = trial_dfs[i]
+            specimen = trial_specimen[i]
+            best_scores = df['best_scores']
+            for j, score in enumerate(best_scores):
+                if score < all_best_scores[-1]:
+                    all_best_scores += [score]
+                    all_best_specimen += [specimen[j]]
+                    best_speciman = specimen[j]
+                else:
+                    all_best_scores += [all_best_scores[-1]]
+                    all_best_specimen += [None]
+                    
+        # Plot best path found over trials
+        if plot:
+            plt.figure(figsize=(6, 6))
+            VisualizeSearch.plot_f(best_speciman, data)
+            plt.show()
+                
+        # Compile data
+        trials_df = pd.DataFrame({'trial': all_trials, 
+                                  'best_scores': all_best_scores})
+        all_best_specimen[-1] = best_speciman
+        return (trials_df, all_best_specimen)
+    
     
 def load_dataset(path):
     # Load dataset from .txt file
@@ -522,7 +579,7 @@ def load_dataset(path):
 if __name__ == "__main__":
 
     dataset = load_dataset('data.txt')
-    n_trials = 100000
+    n_trials = 10000
 
     random_search = SearchAlgorithms()
 
@@ -530,14 +587,26 @@ if __name__ == "__main__":
     #                                random_search.run_rmhc, 
     #                                [dataset, n_trials])
     
-    for i in range(1, 6):
-        df, best_specimen = random_search.run_rmhc(dataset, n_trials, 
-                                                   restart=int(n_trials/10), plot=True)
-        df.to_csv('results/rmhc/n{}_i{}.csv'.format(n_trials, i))
+    # for i in range(1, 2):
+    #     df, best_specimen = random_search.run_rmhc_parallel(dataset, n_trials, 
+    #                                                         restart=int(n_trials/50), 
+    #                                                         num_nodes=None,
+    #                                                         plot=True)
+    #     df.to_csv('results/rmhc/n{}_i{}.csv'.format(n_trials, i))
+    #     print(best_specimen[-1].to_expr(), 'MSE', df['best_scores'].to_list()[-1])
+    #     plt.figure(figsize=(6, 6))
+    #     VisualizeSearch.plot_f(best_specimen[-1], dataset)
+    #     plt.show() 
+        
+    for i in range(21, 22):
+        df, best_specimen = random_search.run_random_parallel(dataset, n_trials, 
+                                                            num_nodes=None,
+                                                            plot=True)
+        df.to_csv('results/random/n{}_i{}.csv'.format(n_trials, i))
         print(best_specimen[-1].to_expr(), 'MSE', df['best_scores'].to_list()[-1])
         plt.figure(figsize=(6, 6))
         VisualizeSearch.plot_f(best_specimen[-1], dataset)
-        plt.show()        
+        plt.show()  
         
     # VisualizeSearch.plot_trials('results/rmhc/', 'n{}'.format(n_trials), 
     #                             'rmhc', 'RMHC Search', ylim=(0,100))

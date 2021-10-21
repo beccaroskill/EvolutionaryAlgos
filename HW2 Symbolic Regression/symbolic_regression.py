@@ -204,7 +204,8 @@ class VisualizeSearch:
         plt.ylabel('y')
         plt.legend(loc='upper left')
     
-    def plot_trials(results_dir, batch_key, batch_label, experiment_name, xlim=None, ylim=None):
+    def plot_fitness(results_dir, batch_key, batch_label, experiment_name, 
+                     fitness_f=None, xlim=None, ylim=None):
         dfs = []
         for f in os.listdir(results_dir):
             if 'csv' in f and batch_key in f:
@@ -213,7 +214,11 @@ class VisualizeSearch:
                 dfs += [df]
     
         trials = dfs[0]['trial']
-        best_scores = 10**2-np.mean([df['best_scores'] for df in dfs], axis=0)
+        if fitness_f:
+            best_scores = fitness_f(np.mean([df['best_scores'] 
+                                             for df in dfs], axis=0))
+        else:
+            best_scores = 10**2-np.mean([df['best_scores'] for df in dfs], axis=0)
         std_err_pts = np.logspace(0, np.log10(max(trials)), 10).astype(int)
         best_scores_err = [np.std([-df['best_scores'][i] for df in dfs]) 
                          for i in std_err_pts]
@@ -597,23 +602,47 @@ if __name__ == "__main__":
     #     VisualizeSearch.plot_f(best_specimen[-1], dataset)
     #     plt.show()  
     
-    for i in range(1, 6):
+    
+    # for i in range(1, 2):
+    #     df, best_specimen = random_search.run_random_parallel(dataset, n_trials, 
+    #                                                         num_nodes=None,
+    #                                                         plot=True)
+    #     results_subdir = 'results/random'
+    #     df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))
+    #     expression_summary = '{}, MSE: {}'.format(best_specimen[-1].to_expr(),
+    #                                               df['best_scores'].to_list()[-1])
+    #     with open('{}/n{}_i{}.txt'.format(results_subdir, n_trials, i), 'w') as f:
+    #         f.write(expression_summary)
+    #     print(expression_summary)
+    #     plt.figure(figsize=(6, 6))
+    #     VisualizeSearch.plot_f(best_specimen[-1], dataset)
+    #     plt.savefig('{}/n{}_i{}.png'.format(results_subdir, n_trials, i), dpi=200)
+    #     plt.show() 
+    
+    for i in range(5, 6):
         df, best_specimen = random_search.run_rmhc_parallel(dataset, n_trials, 
                                                             restart=int(n_trials/100), 
                                                             num_nodes=None,
                                                             plot=True)
-        df.to_csv('results/rmhc_100restarts/n{}_i{}.csv'.format(n_trials, i))
-        print(best_specimen[-1].to_expr(), 'MSE', df['best_scores'].to_list()[-1])
+        results_subdir = 'results/rmhc_100restarts'
+        df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))
+        expression_summary = '{}, MSE: {}'.format(best_specimen[-1].to_expr(),
+                                                  df['best_scores'].to_list()[-1])
+        with open('{}/n{}_i{}.txt'.format(results_subdir, n_trials, i), 'w') as f:
+            f.write(expression_summary)
+        print(expression_summary)
         plt.figure(figsize=(6, 6))
         VisualizeSearch.plot_f(best_specimen[-1], dataset)
+        plt.savefig('{}/n{}_i{}.png'.format(results_subdir, n_trials, i), dpi=200)
         plt.show() 
-        
 
-        
-    # VisualizeSearch.plot_trials('results/rmhc/', 'n{}'.format(10000), 
-    #                             'rmhc (100 restarts)', 'RMHC Search', ylim=(0,100))
-    # VisualizeSearch.plot_trials('results/random/', 'n{}'.format(n_trials), 
-    #                             'random', 'Random Search', ylim=(0,100))
+    # fitness_f = lambda x : 100 - x
+    # VisualizeSearch.plot_fitness('results/rmhc_100restarts/', 'n{}'.format(10000), 
+    #                             'rmhc (100 restarts)', 'RMHC Search', 
+    #                             fitness_f=fitness_f, ylim=(0,100))
+    # VisualizeSearch.plot_fitness('results/random/', 'n{}'.format(n_trials), 
+    #                             'random', 'Random Search', 
+    #                             fitness_f=fitness_f, ylim=(0,100))
     
     # f = 'results/random/n10000_i4.csv'
     # df = pd.read_csv(f)

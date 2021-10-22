@@ -9,7 +9,7 @@ if __name__ == "__main__":
     random_search = SearchAlgorithms()
 
     
-    for i in range(2, 6):
+    for i in range(3, 6):
      
         df, best_specimen = random_search.run_rmhc_parallel(dataset, n_trials, 
                                                             restart=int(n_trials/100), 

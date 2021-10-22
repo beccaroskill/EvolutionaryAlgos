@@ -307,7 +307,7 @@ class SearchAlgorithms:
             self.operator_weights = SearchAlgorithms.default_operator_weights
     
     def get_random_heap(self):
-        depth = random.randint(*self.depth_dist)
+        depth = 8
         depth_last_parent = depth-1
         ops = random.choices(ExpressionHeap.valid_operators, 
                              weights=self.operator_weights, k=2**depth_last_parent)

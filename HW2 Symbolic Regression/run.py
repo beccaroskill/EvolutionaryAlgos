@@ -8,13 +8,16 @@ if __name__ == "__main__":
 
     random_search = SearchAlgorithms()
 
-    random_1 = random_search.get_random_heap()
-    print(1, '\t', random_1.heap)
-    random_2 = random_search.get_random_heap()
-    print(2, '\t', random_2.heap)
+    # random_1 = random_search.get_random_heap()
+    # print(1, '\t', random_1.heap)
+    # random_2 = random_search.get_random_heap()
+    # print(2, '\t', random_2.heap)
 
-    crossover = SearchAlgorithms.get_crossover(random_1, random_2)
-    print('Xed', '\t', crossover.heap)
+    # crossover = random_search.get_crossover(random_1, random_2)
+    # print('Xed', '\t', crossover.heap)
+    # print(crossover.evaluate(dataset))
+    random_search.run_ga_parallel(dataset, 1000)
+
 
     # for i in range(3, 6):
      

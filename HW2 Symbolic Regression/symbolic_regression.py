@@ -400,17 +400,22 @@ class SearchAlgorithms:
         swapped = heap1.copy()
         parents1 = [i1]
         parents2 = [i2]
-        while parents2:
+        while parents1:
             parent1 = parents1.pop(0)
-            parent2 = parents2.pop(0)
-            swapped[parent1] = heap2[parent2]
-            # add children for processing
-            if 2*parent2 + 2 < len(heap2):
-                parents2 += [2*parent2 + 1, 2*parent2 + 2]
-            parents1 += [2*parent1 + 1, 2*parent1 + 2]
+            if parents2:
+                parent2 = parents2.pop(0)
+                swapped[parent1] = heap2[parent2]
+                # add children for processing
+                if 2*parent2 + 2 < len(heap2):
+                    parents2 += [2*parent2 + 1, 2*parent2 + 2]
+                    parents1 += [2*parent1 + 1, 2*parent1 + 2]
+            else:
+                swapped[parent1] = None
+                if 2*parent1 + 2 < len(heap1):
+                    parents1 += [2*parent1 + 1, 2*parent1 + 2]
         return swapped
             
-    def get_crossover(speciman_a, speciman_b):
+    def get_crossover(self, speciman_a, speciman_b):
         op_indices_a = [i for i, x in enumerate(speciman_a.heap) 
                             if x and x in ExpressionHeap.valid_operators]          
         swap_pt_a = random.choice(op_indices_a)
@@ -418,13 +423,23 @@ class SearchAlgorithms:
                             if x and x in ExpressionHeap.valid_operators
                             and i >= swap_pt_a]  
         if not op_indices_b:
-            return speciman_a.heap.copy()
+            return ExpressionHeap(heap=speciman_a.heap.copy())
         else:
             swap_pt_b = random.choice(op_indices_b)
             crossover = SearchAlgorithms.swap_subtree(speciman_a.heap, speciman_b.heap,
                                      swap_pt_a, swap_pt_b)
             return ExpressionHeap(heap=crossover)
-        
+                    
+    def reproduce(self, specimen, n_offspring):
+        offspring = []
+        while len(offspring) < n_offspring:
+            speciman_a = random.choice(specimen)
+            speciman_b = random.choice(specimen)
+            speciman_crossed = self.get_crossover(speciman_a, speciman_b)
+            speciman_mutated = self.get_mutation(speciman_crossed)
+            offspring += [speciman_mutated]
+        return offspring
+    
     def run_random(self, data, n_trials, plot=True, show_output=True):
         if show_output:
             print ('Random Search with', n_trials, 'trials')
@@ -604,6 +619,53 @@ class SearchAlgorithms:
         all_best_specimen[-1] = best_speciman
         return (trials_df, all_best_specimen)
     
+    def run_ga_parallel(self, data, n_trials, n_pop=100, num_nodes=4, plot=True):
+        # Prep data storage for trials
+        num_gens = int(n_trials / n_pop)
+        pop_specimen = [self.get_random_heap() for i in range(n_pop)]
+        trials = range(num_gens*n_pop + 1)
+        best_scores = [float('inf')]
+        best_specimen = [None]
+        best_speciman = None
+        
+        top_k = 20
+
+        with ProcessPool(nodes=num_nodes) as pool:
+            for i in range(num_gens):
+                # Evaluate population
+                pop_scores = pool.map(ExpressionHeap.evaluate, pop_specimen, 
+                                      [data for i in range(n_pop)])
+                # Update best scores
+                for j, score in enumerate(pop_scores):
+                    score = score[1]
+                    if score and score < best_scores[-1]:
+                        best_scores += [score]
+                        best_specimen += [pop_specimen[j]]
+                        best_speciman = pop_specimen[j]
+                    else:
+                        best_scores += [best_scores[-1]]
+                        best_specimen += [None]
+                # Selection
+                pop_scores = [mse if real else float('inf') 
+                                       for real, mse in pop_scores]
+                ordering = np.argsort(pop_scores).astype(int)
+                top_specimen = [speciman for i, speciman in enumerate(pop_specimen)
+                                if i in ordering[:top_k]]
+                # Reproduction
+                pop_specimen = self.reproduce(top_specimen, n_pop)
+                print(best_scores[-1])
+                
+        # Plot best and worst path found over trials
+        if plot:
+            plt.figure(figsize=(6, 6))
+            VisualizeSearch.plot_f(best_speciman, data)
+            plt.show()
+        
+        # Compile data
+        trials_df = pd.DataFrame({'trial': trials, 
+                                  'best_scores': best_scores})
+        best_specimen[-1] = best_speciman
+        return (trials_df, best_specimen)
     
 def load_dataset(path):
     # Load dataset from .txt file

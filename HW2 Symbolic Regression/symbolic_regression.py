@@ -382,7 +382,7 @@ class SearchAlgorithms:
                 mutation[child_i] = None
                 children += [2*child_i+1, 2*child_i+2]
         return mutation
-    
+        
     def get_mutation(self, specimen):    
         depth = np.log2(max([i for i, x in enumerate(specimen.heap) if x]))
         if depth < self.depth_dist[0]:
@@ -396,6 +396,35 @@ class SearchAlgorithms:
         mutation = mutation_f(specimen)
         return ExpressionHeap(heap=mutation)
             
+    def swap_subtree(heap1, heap2, i1, i2):
+        swapped = heap1.copy()
+        parents1 = [i1]
+        parents2 = [i2]
+        while parents2:
+            parent1 = parents1.pop(0)
+            parent2 = parents2.pop(0)
+            swapped[parent1] = heap2[parent2]
+            # add children for processing
+            if 2*parent2 + 2 < len(heap2):
+                parents2 += [2*parent2 + 1, 2*parent2 + 2]
+            parents1 += [2*parent1 + 1, 2*parent1 + 2]
+        return swapped
+            
+    def get_crossover(speciman_a, speciman_b):
+        op_indices_a = [i for i, x in enumerate(speciman_a.heap) 
+                            if x and x in ExpressionHeap.valid_operators]          
+        swap_pt_a = random.choice(op_indices_a)
+        op_indices_b = [i for i, x in enumerate(speciman_b.heap) 
+                            if x and x in ExpressionHeap.valid_operators
+                            and i >= swap_pt_a]  
+        if not op_indices_b:
+            return speciman_a.heap.copy()
+        else:
+            swap_pt_b = random.choice(op_indices_b)
+            crossover = SearchAlgorithms.swap_subtree(speciman_a.heap, speciman_b.heap,
+                                     swap_pt_a, swap_pt_b)
+            return ExpressionHeap(heap=crossover)
+        
     def run_random(self, data, n_trials, plot=True, show_output=True):
         if show_output:
             print ('Random Search with', n_trials, 'trials')
@@ -523,7 +552,6 @@ class SearchAlgorithms:
         best_specimen[-1] = best_speciman
         return (trials_df, best_specimen)
     
-
     def run_rmhc_parallel(self, data, n_trials, restart=None, 
                           num_nodes=4, plot=True):
         # Prep params

@@ -101,11 +101,9 @@ class ExpressionHeap:
     def evaluate_at(self, x_val):
         heap = self.heap.copy()
         arg_stack = deque() 
-
         # Deal with expressions that are just one term, no operators
         if len(heap) == 1:
             heap[0] = [heap[0] if heap[0] != 'x' else x_val]
-                
         for i in range(len(heap)-1, 0, -1):
             x = heap[i]
             if x not in ExpressionHeap.all_operators:
@@ -115,6 +113,8 @@ class ExpressionHeap:
                     left, right = [arg if arg != 'x' else x_val
                                    for arg in [x, arg_stack.pop()] ]
                     if operator is not None and left is not None:
+                        if left is None or right is None:
+                            return (False, None)
                         if operator == 'Add':
                             parent_val = left + right                        
                         elif operator == 'Sub':
@@ -132,6 +132,7 @@ class ExpressionHeap:
                             parent_val = math.cos(left)
                         else:
                             print('Operator unknown:', operator)
+                            print(heap)
                         heap[parent_i] = parent_val
                 else:
                     arg_stack.append(x)
@@ -298,7 +299,9 @@ class SearchAlgorithms:
                  var_ratio=None, operator_weights=None):
         
         if depth_dist is None:
-            self.depth_dist = SearchAlgorithms.default_depth_dist               
+            self.depth_dist = SearchAlgorithms.default_depth_dist     
+        else:
+            self.depth_dist = depth_dist
         if coef_dist is None:
             self.coef_dist = SearchAlgorithms.default_coef_dist        
         if var_ratio is None:
@@ -307,7 +310,7 @@ class SearchAlgorithms:
             self.operator_weights = SearchAlgorithms.default_operator_weights
     
     def get_random_heap(self):
-        depth = 8
+        depth = self.depth_dist[1]
         depth_last_parent = depth-1
         ops = random.choices(ExpressionHeap.valid_operators, 
                              weights=self.operator_weights, k=2**depth_last_parent)
@@ -408,6 +411,7 @@ class SearchAlgorithms:
                 # add children for processing
                 if 2*parent2 + 2 < len(heap2):
                     parents2 += [2*parent2 + 1, 2*parent2 + 2]
+                if 2*parent1 + 2 < len(heap1):
                     parents1 += [2*parent1 + 1, 2*parent1 + 2]
             else:
                 swapped[parent1] = None
@@ -619,7 +623,8 @@ class SearchAlgorithms:
         all_best_specimen[-1] = best_speciman
         return (trials_df, all_best_specimen)
     
-    def run_ga_parallel(self, data, n_trials, n_pop=100, num_nodes=4, plot=True):
+    def run_ga_parallel(self, data, n_trials, n_pop=100, num_nodes=4, plot=True,
+                        parallel=True):
         # Prep data storage for trials
         num_gens = int(n_trials / n_pop)
         pop_specimen = [self.get_random_heap() for i in range(n_pop)]
@@ -633,8 +638,11 @@ class SearchAlgorithms:
         with ProcessPool(nodes=num_nodes) as pool:
             for i in range(num_gens):
                 # Evaluate population
-                pop_scores = pool.map(ExpressionHeap.evaluate, pop_specimen, 
-                                      [data for i in range(n_pop)])
+                if parallel:
+                    pop_scores = pool.map(ExpressionHeap.evaluate, pop_specimen, 
+                                          [data for i in range(n_pop)])
+                else:
+                    pop_scores = [p.evaluate(data) for p in pop_specimen] # unparallelize
                 # Update best scores
                 for j, score in enumerate(pop_scores):
                     score = score[1]

@@ -338,35 +338,38 @@ class SearchAlgorithms:
         mutation = specimen.heap.copy()
         arg_indices = [i for i, x in enumerate(specimen.heap) 
                           if x and x != 'x' and x not in ExpressionHeap.valid_operators]  
-        arg_i = random.choice(arg_indices)
-        coef = round(random.uniform(*self.coef_dist), 2)
-        mutation[arg_i] = coef
+        if arg_indices:
+            arg_i = random.choice(arg_indices)
+            coef = round(random.uniform(*self.coef_dist), 2)
+            mutation[arg_i] = coef
         return mutation
     
     def change_operator(self, specimen):
         mutation = specimen.heap.copy()
         op_indices = [i for i, x in enumerate(specimen.heap) 
                           if x and x in ExpressionHeap.valid_operators]        
-        i = random.choice(op_indices)
-        op = random.choice(ExpressionHeap.valid_operators)
-        mutation[i] = op
+        if op_indices:
+            i = random.choice(op_indices)
+            op = random.choice(ExpressionHeap.valid_operators)
+            mutation[i] = op
         return mutation
     
     def add_subtree(self, specimen):
         mutation = specimen.heap.copy()
         arg_indices = [i for i, x in enumerate(specimen.heap) 
                           if x and x not in ExpressionHeap.valid_operators]       
-        i = random.choice(arg_indices)
-        op = random.choice(ExpressionHeap.valid_operators)
-        mutation[i] = op
-        coef = round(random.uniform(*self.coef_dist), 2)
-        swap = random.choice([True, False])
-        left = 'x' if not swap else coef
-        right = coef if not swap else 'x'
-        while 2*i+2 >= len(mutation):
-            mutation += [None]
-        mutation[2*i+1] = left
-        mutation[2*i+2] = right
+        if arg_indices:
+            i = random.choice(arg_indices)
+            op = random.choice(ExpressionHeap.valid_operators)
+            mutation[i] = op
+            coef = round(random.uniform(*self.coef_dist), 2)
+            swap = random.choice([True, False])
+            left = 'x' if not swap else coef
+            right = coef if not swap else 'x'
+            while 2*i+2 >= len(mutation):
+                mutation += [None]
+            mutation[2*i+1] = left
+            mutation[2*i+2] = right
         return mutation
     
     def remove_subtree(self, specimen):
@@ -374,16 +377,17 @@ class SearchAlgorithms:
         op_indices = [i for i, x in enumerate(specimen.heap) 
                           if x and x in ExpressionHeap.valid_operators 
                           and i != 0]        
-        i = random.choice(op_indices)
-        coef = round(random.uniform(*self.coef_dist), 2)
-        arg = random.choice([coef, 'x'])
-        mutation[i] = arg
-        children = [2*i+1, 2*i+2]
-        while children:
-            child_i = children.pop(0)
-            if child_i < len(mutation):
-                mutation[child_i] = None
-                children += [2*child_i+1, 2*child_i+2]
+        if op_indices:
+            i = random.choice(op_indices)
+            coef = round(random.uniform(*self.coef_dist), 2)
+            arg = random.choice([coef, 'x'])
+            mutation[i] = arg
+            children = [2*i+1, 2*i+2]
+            while children:
+                child_i = children.pop(0)
+                if child_i < len(mutation):
+                    mutation[child_i] = None
+                    children += [2*child_i+1, 2*child_i+2]
         return mutation
         
     def get_mutation(self, specimen):    
@@ -661,6 +665,8 @@ class SearchAlgorithms:
                                 if i in ordering[:top_k]]
                 # Reproduction
                 pop_specimen = self.reproduce(top_specimen, n_pop)
+                print(i+1, 'of', num_gens)
+                print(top_specimen[0].to_expr())
                 print(best_scores[-1])
                 
         # Plot best and worst path found over trials

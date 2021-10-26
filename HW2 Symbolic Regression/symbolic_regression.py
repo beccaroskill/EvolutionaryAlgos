@@ -101,11 +101,9 @@ class ExpressionHeap:
     def evaluate_at(self, x_val):
         heap = self.heap.copy()
         arg_stack = deque() 
-
         # Deal with expressions that are just one term, no operators
         if len(heap) == 1:
             heap[0] = [heap[0] if heap[0] != 'x' else x_val]
-                
         for i in range(len(heap)-1, 0, -1):
             x = heap[i]
             if x not in ExpressionHeap.all_operators:
@@ -115,6 +113,8 @@ class ExpressionHeap:
                     left, right = [arg if arg != 'x' else x_val
                                    for arg in [x, arg_stack.pop()] ]
                     if operator is not None and left is not None:
+                        if left is None or right is None:
+                            return (False, None)
                         if operator == 'Add':
                             parent_val = left + right                        
                         elif operator == 'Sub':
@@ -132,6 +132,7 @@ class ExpressionHeap:
                             parent_val = math.cos(left)
                         else:
                             print('Operator unknown:', operator)
+                            print(heap)
                         heap[parent_i] = parent_val
                 else:
                     arg_stack.append(x)
@@ -298,7 +299,9 @@ class SearchAlgorithms:
                  var_ratio=None, operator_weights=None):
         
         if depth_dist is None:
-            self.depth_dist = SearchAlgorithms.default_depth_dist               
+            self.depth_dist = SearchAlgorithms.default_depth_dist     
+        else:
+            self.depth_dist = depth_dist
         if coef_dist is None:
             self.coef_dist = SearchAlgorithms.default_coef_dist        
         if var_ratio is None:
@@ -307,7 +310,7 @@ class SearchAlgorithms:
             self.operator_weights = SearchAlgorithms.default_operator_weights
     
     def get_random_heap(self):
-        depth = 8
+        depth = self.depth_dist[1]
         depth_last_parent = depth-1
         ops = random.choices(ExpressionHeap.valid_operators, 
                              weights=self.operator_weights, k=2**depth_last_parent)
@@ -335,35 +338,38 @@ class SearchAlgorithms:
         mutation = specimen.heap.copy()
         arg_indices = [i for i, x in enumerate(specimen.heap) 
                           if x and x != 'x' and x not in ExpressionHeap.valid_operators]  
-        arg_i = random.choice(arg_indices)
-        coef = round(random.uniform(*self.coef_dist), 2)
-        mutation[arg_i] = coef
+        if arg_indices:
+            arg_i = random.choice(arg_indices)
+            coef = round(random.uniform(*self.coef_dist), 2)
+            mutation[arg_i] = coef
         return mutation
     
     def change_operator(self, specimen):
         mutation = specimen.heap.copy()
         op_indices = [i for i, x in enumerate(specimen.heap) 
                           if x and x in ExpressionHeap.valid_operators]        
-        i = random.choice(op_indices)
-        op = random.choice(ExpressionHeap.valid_operators)
-        mutation[i] = op
+        if op_indices:
+            i = random.choice(op_indices)
+            op = random.choice(ExpressionHeap.valid_operators)
+            mutation[i] = op
         return mutation
     
     def add_subtree(self, specimen):
         mutation = specimen.heap.copy()
         arg_indices = [i for i, x in enumerate(specimen.heap) 
                           if x and x not in ExpressionHeap.valid_operators]       
-        i = random.choice(arg_indices)
-        op = random.choice(ExpressionHeap.valid_operators)
-        mutation[i] = op
-        coef = round(random.uniform(*self.coef_dist), 2)
-        swap = random.choice([True, False])
-        left = 'x' if not swap else coef
-        right = coef if not swap else 'x'
-        while 2*i+2 >= len(mutation):
-            mutation += [None]
-        mutation[2*i+1] = left
-        mutation[2*i+2] = right
+        if arg_indices:
+            i = random.choice(arg_indices)
+            op = random.choice(ExpressionHeap.valid_operators)
+            mutation[i] = op
+            coef = round(random.uniform(*self.coef_dist), 2)
+            swap = random.choice([True, False])
+            left = 'x' if not swap else coef
+            right = coef if not swap else 'x'
+            while 2*i+2 >= len(mutation):
+                mutation += [None]
+            mutation[2*i+1] = left
+            mutation[2*i+2] = right
         return mutation
     
     def remove_subtree(self, specimen):
@@ -371,18 +377,19 @@ class SearchAlgorithms:
         op_indices = [i for i, x in enumerate(specimen.heap) 
                           if x and x in ExpressionHeap.valid_operators 
                           and i != 0]        
-        i = random.choice(op_indices)
-        coef = round(random.uniform(*self.coef_dist), 2)
-        arg = random.choice([coef, 'x'])
-        mutation[i] = arg
-        children = [2*i+1, 2*i+2]
-        while children:
-            child_i = children.pop(0)
-            if child_i < len(mutation):
-                mutation[child_i] = None
-                children += [2*child_i+1, 2*child_i+2]
+        if op_indices:
+            i = random.choice(op_indices)
+            coef = round(random.uniform(*self.coef_dist), 2)
+            arg = random.choice([coef, 'x'])
+            mutation[i] = arg
+            children = [2*i+1, 2*i+2]
+            while children:
+                child_i = children.pop(0)
+                if child_i < len(mutation):
+                    mutation[child_i] = None
+                    children += [2*child_i+1, 2*child_i+2]
         return mutation
-    
+        
     def get_mutation(self, specimen):    
         depth = np.log2(max([i for i, x in enumerate(specimen.heap) if x]))
         if depth < self.depth_dist[0]:
@@ -396,6 +403,51 @@ class SearchAlgorithms:
         mutation = mutation_f(specimen)
         return ExpressionHeap(heap=mutation)
             
+    def swap_subtree(heap1, heap2, i1, i2):
+        swapped = heap1.copy()
+        parents1 = [i1]
+        parents2 = [i2]
+        while parents1:
+            parent1 = parents1.pop(0)
+            if parents2:
+                parent2 = parents2.pop(0)
+                swapped[parent1] = heap2[parent2]
+                # add children for processing
+                if 2*parent2 + 2 < len(heap2):
+                    parents2 += [2*parent2 + 1, 2*parent2 + 2]
+                if 2*parent1 + 2 < len(heap1):
+                    parents1 += [2*parent1 + 1, 2*parent1 + 2]
+            else:
+                swapped[parent1] = None
+                if 2*parent1 + 2 < len(heap1):
+                    parents1 += [2*parent1 + 1, 2*parent1 + 2]
+        return swapped
+            
+    def get_crossover(self, speciman_a, speciman_b):
+        op_indices_a = [i for i, x in enumerate(speciman_a.heap) 
+                            if x and x in ExpressionHeap.valid_operators]          
+        swap_pt_a = random.choice(op_indices_a)
+        op_indices_b = [i for i, x in enumerate(speciman_b.heap) 
+                            if x and x in ExpressionHeap.valid_operators
+                            and i >= swap_pt_a]  
+        if not op_indices_b:
+            return ExpressionHeap(heap=speciman_a.heap.copy())
+        else:
+            swap_pt_b = random.choice(op_indices_b)
+            crossover = SearchAlgorithms.swap_subtree(speciman_a.heap, speciman_b.heap,
+                                     swap_pt_a, swap_pt_b)
+            return ExpressionHeap(heap=crossover)
+                    
+    def reproduce(self, specimen, n_offspring):
+        offspring = []
+        while len(offspring) < n_offspring:
+            speciman_a = random.choice(specimen)
+            speciman_b = random.choice(specimen)
+            speciman_crossed = self.get_crossover(speciman_a, speciman_b)
+            speciman_mutated = self.get_mutation(speciman_crossed)
+            offspring += [speciman_mutated]
+        return offspring
+    
     def run_random(self, data, n_trials, plot=True, show_output=True):
         if show_output:
             print ('Random Search with', n_trials, 'trials')
@@ -523,7 +575,6 @@ class SearchAlgorithms:
         best_specimen[-1] = best_speciman
         return (trials_df, best_specimen)
     
-
     def run_rmhc_parallel(self, data, n_trials, restart=None, 
                           num_nodes=4, plot=True):
         # Prep params
@@ -576,6 +627,59 @@ class SearchAlgorithms:
         all_best_specimen[-1] = best_speciman
         return (trials_df, all_best_specimen)
     
+    def run_ga_parallel(self, data, n_trials, n_pop=100, num_nodes=4, plot=True,
+                        parallel=True):
+        # Prep data storage for trials
+        num_gens = int(n_trials / n_pop)
+        pop_specimen = [self.get_random_heap() for i in range(n_pop)]
+        trials = range(num_gens*n_pop + 1)
+        best_scores = [float('inf')]
+        best_specimen = [None]
+        best_speciman = None
+        
+        top_k = 20
+
+        with ProcessPool(nodes=num_nodes) as pool:
+            for i in range(num_gens):
+                # Evaluate population
+                if parallel:
+                    pop_scores = pool.map(ExpressionHeap.evaluate, pop_specimen, 
+                                          [data for i in range(n_pop)])
+                else:
+                    pop_scores = [p.evaluate(data) for p in pop_specimen] # unparallelize
+                # Update best scores
+                for j, score in enumerate(pop_scores):
+                    score = score[1]
+                    if score and score < best_scores[-1]:
+                        best_scores += [score]
+                        best_specimen += [pop_specimen[j]]
+                        best_speciman = pop_specimen[j]
+                    else:
+                        best_scores += [best_scores[-1]]
+                        best_specimen += [None]
+                # Selection
+                pop_scores = [mse if real else float('inf') 
+                                       for real, mse in pop_scores]
+                ordering = np.argsort(pop_scores).astype(int)
+                top_specimen = [speciman for i, speciman in enumerate(pop_specimen)
+                                if i in ordering[:top_k]]
+                # Reproduction
+                pop_specimen = self.reproduce(top_specimen, n_pop)
+                print(i+1, 'of', num_gens)
+                print(top_specimen[0].to_expr())
+                print(best_scores[-1])
+                
+        # Plot best and worst path found over trials
+        if plot:
+            plt.figure(figsize=(6, 6))
+            VisualizeSearch.plot_f(best_speciman, data)
+            plt.show()
+        
+        # Compile data
+        trials_df = pd.DataFrame({'trial': trials, 
+                                  'best_scores': best_scores})
+        best_specimen[-1] = best_speciman
+        return (trials_df, best_specimen)
     
 def load_dataset(path):
     # Load dataset from .txt file

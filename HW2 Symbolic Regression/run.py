@@ -21,8 +21,8 @@ if __name__ == "__main__":
 
     for i in range(1, 6):
      
-        df, best_specimen = random_search.run_ga_parallel(dataset, n_trials, num_nodes=None)
-        results_subdir = 'results/ga'
+        df, best_specimen = random_search.run_rmhc(dataset, n_trials)
+        results_subdir = 'results/rmhc_depth3to8'
         df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))
         expression_summary = '{}, MSE: {}'.format(best_specimen[-1].to_expr(),
                                                   df['best_scores'].to_list()[-1])

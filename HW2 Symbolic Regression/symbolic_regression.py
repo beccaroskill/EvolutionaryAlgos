@@ -9,6 +9,7 @@ import os
 import pandas as pd
 from pathos.multiprocessing import ProcessPool
 import tqdm
+import csv
 
 class ExpressionHeap:
     
@@ -638,7 +639,7 @@ class SearchAlgorithms:
         best_speciman = None
         
         top_k = 20
-
+        dots = []
         with ProcessPool(nodes=num_nodes) as pool:
             for i in range(num_gens):
                 # Evaluate population
@@ -649,7 +650,7 @@ class SearchAlgorithms:
                     pop_scores = [p.evaluate(data) for p in pop_specimen] # unparallelize
                 # Run to get dot plot data
                 for score in pop_scores:
-                    dots.append[i, score]
+                    dots.append([i, score])
                 # Update best scores
                 for j, score in enumerate(pop_scores):
                     score = score[1]

@@ -541,7 +541,7 @@ class SearchAlgorithms:
         best_speciman = None
         
         for i in range(n_trials):
-            if show_output and i % (n_trials / 10) == 0:
+            if show_output and i % (n_trials / 1000) == 0:
                 print ('Trial', i, 'of', n_trials)
                 print ('Best score', round(best_scores[-1], 2))
                 

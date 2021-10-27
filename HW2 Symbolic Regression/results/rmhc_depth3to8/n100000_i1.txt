@@ -1,0 +1,1 @@
+Add(Add(cos(Add(0.68, Add(Add(-5.49, x), Mul(-1, Mul(cos(Mul(-1.21, x)), Pow(Add(4.03, Mul(-1, x)), -1)))))), Mul(-1, sin(x))), Mul(x, Pow(1.66, -1))), MSE: 1.7652059288433457

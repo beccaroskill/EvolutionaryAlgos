@@ -1,5 +1,6 @@
 from symbolic_regression import ExpressionHeap, SearchAlgorithms, VisualizeSearch, load_dataset
 from matplotlib import pyplot as plt
+from pathos.multiprocessing import ProcessPool
 
 if __name__ == "__main__":
 
@@ -14,14 +15,17 @@ if __name__ == "__main__":
     # print(1, '\t', random_1.heap)
     # random_2 = random_search.get_random_heap()
     # print(2, '\t', random_2.heap)
+    with ProcessPool() as pool:
+        results = pool.map(random_search.run_rmhc,
+                           [dataset for i in range(4)],
+                           [n_trials for i in range(4)])
 
     # crossover = random_search.get_crossover(random_1, random_2)
     # print('Xed', '\t', crossover.heap)
     # print(crossover.evaluate(dataset))
-
-    for i in range(1, 6):
-     
-        df, best_specimen = random_search.run_rmhc(dataset, n_trials)
+    for i in range(4):
+        df, best_specimen = results[i]
+        i = i + 2
         results_subdir = 'results/rmhc_depth3to8'
         df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))
         expression_summary = '{}, MSE: {}'.format(best_specimen[-1].to_expr(),

@@ -647,6 +647,9 @@ class SearchAlgorithms:
                                           [data for i in range(n_pop)])
                 else:
                     pop_scores = [p.evaluate(data) for p in pop_specimen] # unparallelize
+                # Run to get dot plot data
+                for score in pop_scores:
+                    dots.append[i, score]
                 # Update best scores
                 for j, score in enumerate(pop_scores):
                     score = score[1]
@@ -679,6 +682,13 @@ class SearchAlgorithms:
         trials_df = pd.DataFrame({'trial': trials, 
                                   'best_scores': best_scores})
         best_specimen[-1] = best_speciman
+        
+        with open("results/dotplot/dots.csv", mode="w") as csv_file:
+            csvwriter = csv.writer(csv_file)
+            csvwriter.writerow(['Index', 'Distance'])
+            csvwriter.writerows(dots)
+
+            
         return (trials_df, best_specimen)
     
 def load_dataset(path):

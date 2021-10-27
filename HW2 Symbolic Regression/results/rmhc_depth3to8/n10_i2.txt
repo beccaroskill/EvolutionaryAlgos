@@ -1,1 +1,0 @@
-sin(sin(cos(cos(Mul(Add(Mul(x, Pow(-4.14, -1)), Mul(x, -8.69)), Add(Add(-2.84, x), Mul(x, Pow(Mul(-0.4, x), -1)))))))), MSE: 43.186784137767845

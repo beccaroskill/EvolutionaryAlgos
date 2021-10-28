@@ -5,11 +5,10 @@ from pathos.multiprocessing import ProcessPool
 if __name__ == "__main__":
 
     dataset = load_dataset('data.txt')
-    n_trials = 100000
+    n_trials = 10000
     
     
 
-    random_search = SearchAlgorithms()
 
     # random_1 = random_search.get_random_heap()
     # print(1, '\t', random_1.heap)
@@ -19,10 +18,11 @@ if __name__ == "__main__":
     # crossover = random_search.get_crossover(random_1, random_2)
     # print('Xed', '\t', crossover.heap)
     # print(crossover.evaluate(dataset))
-    for i in range(1, 6):
+    for i in range(4, 9):
+        random_search = SearchAlgorithms(depth_dist=[3,i])
         df, best_specimen = random_search.run_ga_parallel(dataset, n_trials, num_nodes=None)
-        results_subdir = 'results/ga_diverse'
-        df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))
+        results_subdir = 'results/ga_complexity'
+        df.to_csv('{}/n{}_depth{}.csv'.format(results_subdir, n_trials, i))
         expression_summary = '{}, MSE: {}'.format(best_specimen[-1].to_expr(),
                                                   df['best_scores'].to_list()[-1])
         with open('{}/n{}_i{}.txt'.format(results_subdir, n_trials, i), 'w') as f:

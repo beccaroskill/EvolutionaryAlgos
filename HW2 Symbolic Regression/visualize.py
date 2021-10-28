@@ -10,16 +10,19 @@ if __name__ == "__main__":
 
     fitness_f = lambda x : (100 - x)
     VisualizeSearch.plot_fitness('results/ga_diverse/', 'n{}'.format(n_trials), 
-                                'ga \n(population=1000,\nselection=30%)', 'GA (Diverse) Search', 
+                                'GA \n(population=1000,\nselection=30%)', 'GA (Diverse) Search', 
                                 fitness_f=fitness_f, ylim=(0,100))
     VisualizeSearch.plot_fitness('results/ga/', 'n{}'.format(n_trials), 
-                                'ga \n(population=100,\nselection=20%)', 'GA Search', 
+                                'GA \n(population=100,\nselection=20%)', 'GA Search', 
                                 fitness_f=fitness_f, ylim=(0,100))
     VisualizeSearch.plot_fitness('results/rmhc_100restarts_depth3to8/', 'n{}'.format(n_trials), 
-                                'rmhc (100 restarts)', 'RMHC Search', 
+                                'RMHC (100 restarts)', 'RMHC Search', 
+                                fitness_f=fitness_f, ylim=(0,100))
+    VisualizeSearch.plot_fitness('results/rmhc_depth3to8/', 'n{}'.format(n_trials), 
+                                'RMHC', 'RMHC Search', 
                                 fitness_f=fitness_f, ylim=(0,100))
     VisualizeSearch.plot_fitness('results/random_depth3to8/', 'n{}'.format(n_trials), 
-                                'random', 'Random Search', 
+                                'Random', 'Random Search', 
                                 fitness_f=fitness_f, ylim=(0,100))
     plt.title('Learning curves across algorithms')
     plt.savefig('figs/all_algo_fitness.png')

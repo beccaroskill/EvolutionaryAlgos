@@ -5,7 +5,7 @@ from pathos.multiprocessing import ProcessPool
 if __name__ == "__main__":
 
     dataset = [(x, 3*x) for x in range(30)]
-    n_trials = 100
+    n_trials = 10000
     
     random_search=SearchAlgorithms(depth_dist=[3,5])
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # crossover = random_search.get_crossover(random_1, random_2)
     # print('Xed', '\t', crossover.heap)
     # print(crossover.evaluate(dataset))
-    for i in range(1, 5):
+    for i in range(1, 2):
 
         df, best_specimen = random_search.run_random_parallel(dataset, n_trials, 
                                                             num_nodes=None,

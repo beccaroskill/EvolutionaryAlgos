@@ -628,7 +628,7 @@ class SearchAlgorithms:
         all_best_specimen[-1] = best_speciman
         return (trials_df, all_best_specimen)
     
-    def run_ga_parallel(self, data, n_trials, n_pop=1000, num_nodes=4, plot=True,
+    def run_ga_parallel(self, data, n_trials, n_pop=100, num_nodes=4, plot=True,
                         parallel=True):
         # Prep data storage for trials
         num_gens = int(n_trials / n_pop)
@@ -638,7 +638,7 @@ class SearchAlgorithms:
         best_specimen = [None]
         best_speciman = None
         
-        top_k = 300
+        top_k = 20
         dots = []
         with ProcessPool(nodes=num_nodes) as pool:
             for i in range(num_gens):

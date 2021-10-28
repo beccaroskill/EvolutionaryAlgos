@@ -5,8 +5,8 @@ import numpy as np
 if __name__ == "__main__":
 
     dataset = load_dataset('data.txt')
-    n_trials = 100000
-    
+    n_trials = 10000
+
 
     fitness_f = lambda x : (100 - x)
     VisualizeSearch.plot_fitness('results/ga_diverse/', 'n{}'.format(n_trials), 

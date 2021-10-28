@@ -17,5 +17,6 @@ if __name__ == "__main__":
     plt.savefig('figs/ga_complexity_fitness.png')
     plt.ylim(95, 100)
     plt.xlim(10**3, 10**4)
+    plt.legend(loc="upper left")
     plt.savefig('figs/ga_complexity_fitness_zoomed.png')
     plt.show()

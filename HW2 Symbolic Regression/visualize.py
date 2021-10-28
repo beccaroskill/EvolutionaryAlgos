@@ -28,5 +28,7 @@ if __name__ == "__main__":
     plt.savefig('figs/all_algo_fitness.png')
     plt.ylim(98, 100)
     plt.xlim(10**3, 10**5)
+    plt.legend(loc="upper left")
+
     plt.savefig('figs/all_algo_fitness_zoomed.png')
     plt.show()

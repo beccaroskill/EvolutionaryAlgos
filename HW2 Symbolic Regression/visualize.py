@@ -23,7 +23,7 @@ if __name__ == "__main__":
                                 fitness_f=fitness_f, ylim=(0,100))
     plt.title('Learning curves across algorithms')
     plt.savefig('figs/all_algo_fitness.png')
-    plt.ylim(90, 100)
+    plt.ylim(98, 100)
     plt.xlim(10**3, 10**5)
     plt.savefig('figs/all_algo_fitness_zoomed.png')
     plt.show()

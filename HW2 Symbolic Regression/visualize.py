@@ -9,6 +9,12 @@ if __name__ == "__main__":
     
 
     fitness_f = lambda x : (100 - x)
+    VisualizeSearch.plot_fitness('results/ga_diverse/', 'n{}'.format(n_trials), 
+                                'ga (diverse)', 'GA (Diverse) Search', 
+                                fitness_f=fitness_f, ylim=(0,100))
+    VisualizeSearch.plot_fitness('results/ga/', 'n{}'.format(n_trials), 
+                                'ga', 'GA Search', 
+                                fitness_f=fitness_f, ylim=(0,100))
     VisualizeSearch.plot_fitness('results/rmhc_100restarts_depth3to8/', 'n{}'.format(n_trials), 
                                 'rmhc (100 restarts)', 'RMHC Search', 
                                 fitness_f=fitness_f, ylim=(0,100))

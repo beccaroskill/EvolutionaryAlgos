@@ -4,8 +4,8 @@ from pathos.multiprocessing import ProcessPool
 
 if __name__ == "__main__":
 
-    dataset = [x, 3*x for x in range(30)]
-    n_trials = 10000
+    dataset = [(x, 3*x) for x in range(30)]
+    n_trials = 100
     
     random_search=SearchAlgorithms(depth_dist=[3,5])
 

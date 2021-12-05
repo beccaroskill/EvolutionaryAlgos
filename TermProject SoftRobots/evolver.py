@@ -170,7 +170,6 @@ class Speciman:
         start_p, end_p, T = self.simulate("shadow", self.breathe_params, vis=False, save_gif=False, 
                                           simulation_time=0.5, plot_energy=False, drop_height=0.02)
         speed = mag(end_p - start_p) / T
-        print(speed)
         return speed
                   
     def simulate(self, name, breathe_params, vis=True, save_gif=True, simulation_time=0.05, 
@@ -337,7 +336,7 @@ class Search:
             speciman_crossed = self.get_crossover(speciman_a, speciman_b)
             speciman_mutated = self.get_mutation(speciman_crossed)
             offspring += [speciman_mutated]
-        return offspring + specimen
+        return offspring
     
     def run_random(self, n_trials, show_output=True):
         if show_output:

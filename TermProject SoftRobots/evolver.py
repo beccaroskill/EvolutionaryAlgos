@@ -336,7 +336,7 @@ class Search:
             speciman_crossed = self.get_crossover(speciman_a, speciman_b)
             speciman_mutated = self.get_mutation(speciman_crossed)
             offspring += [speciman_mutated]
-        return offspring
+        return offspring + specimen
     
     def run_random(self, n_trials, show_output=True):
         if show_output:
@@ -538,7 +538,7 @@ class Search:
                 top_specimen = [speciman for i, speciman in enumerate(pop_specimen)
                                 if i in ordering[:top_k]]
                 # Reproduction
-                pop_specimen = self.reproduce(top_specimen, n_pop)
+                pop_specimen = self.reproduce(top_specimen, n_pop-top_k)
                 print(i+1, 'of', num_gens)
                 print('Best score:', best_scores[-1])
                 print('Average score:', np.mean(pop_scores))
@@ -550,8 +550,6 @@ class Search:
         #     plt.show()
         
         # Compile data
-        print(len(trials))
-        print(len(best_scores))
         trials_df = pd.DataFrame({'trial': trials, 
                                   'best_scores': best_scores})
         best_specimen[-1] = best_speciman
@@ -663,9 +661,9 @@ class VisualizeSearch:
         plt.show()
     
 search_mgr = Search()
-n_trials = 500
+n_trials = 10000
 for i in range(5, 6):
-    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=6)
+    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=None)
     # # df, best_specimen = search_mgr.run_rmhc(100, restart=10)
     results_subdir = 'results/ga'
     df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))

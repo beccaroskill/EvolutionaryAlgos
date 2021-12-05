@@ -541,7 +541,8 @@ class Search:
                 # Reproduction
                 pop_specimen = self.reproduce(top_specimen, n_pop)
                 print(i+1, 'of', num_gens)
-                print(best_scores[-1])
+                print('Best score:', best_scores[-1])
+                print('Average score:', np.mean(pop_scores))
                 
         # Plot best and worst path found over trials
         # if plot:
@@ -550,6 +551,8 @@ class Search:
         #     plt.show()
         
         # Compile data
+        print(len(trials))
+        print(len(best_scores))
         trials_df = pd.DataFrame({'trial': trials, 
                                   'best_scores': best_scores})
         best_specimen[-1] = best_speciman

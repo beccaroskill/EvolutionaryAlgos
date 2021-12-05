@@ -10,6 +10,7 @@ import pandas as pd
 from pathos.multiprocessing import ProcessPool
 import math
 import csv
+import copy
 
 MU = 1
 SHADOW_COLOR = vector(0.7, 0.7, 0.7)
@@ -323,7 +324,7 @@ class Search:
         crossover_pts = sorted([int(random.uniform(0, 1) * N_RODS), 
                                 int(random.uniform(0, 1) * N_RODS)])
         breathe_params = breathe_params_a[:crossover_pts[0]] + \
-                         breathe_params_b[crossover_pt[0]:crossover_pt[1]] + \
+                         breathe_params_b[crossover_pts[0]:crossover_pts[1]] + \
                          breathe_params_a[crossover_pts[1]:]
         return Speciman(breathe_params)
              

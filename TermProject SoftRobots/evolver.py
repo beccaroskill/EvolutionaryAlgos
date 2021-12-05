@@ -308,7 +308,7 @@ class Search:
 
     def get_mutation(self, speciman):   
         breathe_params = speciman.breathe_params
-        mutate_pct = 0.35
+        mutate_pct = 0.1
         for i in range(len(breathe_params)):
             if random.uniform(0, 1) < mutate_pct:
                 new_params = (random.uniform(*self.k_dist), 
@@ -509,7 +509,7 @@ class Search:
         best_specimen = [None]
         best_speciman = None
         
-        top_k = 20
+        top_k = 10
         dots = []
         with ProcessPool(nodes=num_nodes) as pool:
             for i in range(num_gens):
@@ -658,8 +658,8 @@ class VisualizeSearch:
     
 search_mgr = Search()
 n_trials = 2000
-for i in range(3,4):
-    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=6)
+for i in range(4, 5):
+    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=None)
     # # df, best_specimen = search_mgr.run_rmhc(100, restart=10)
     results_subdir = 'results/ga'
     df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))

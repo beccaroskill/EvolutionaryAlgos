@@ -283,7 +283,7 @@ class Search:
     default_b_dist = [0, 0.025]
     
     # probability of variable (vs coefficient)
-    default_c_dist = [0, 3.14]
+    default_c_dist = [0, 6.28]
 
     def __init__(self, k_dist=None, b_dist=None, c_dist=None,
                  var_ratio=None, operator_weights=None):
@@ -307,7 +307,7 @@ class Search:
         return Speciman(breathe_params)
 
     def get_mutation(self, speciman):   
-        breathe_params = speciman.breathe_params
+        breathe_params = copy.deepcopy(speciman.breathe_params)
         mutate_pct = 0.1
         for i in range(len(breathe_params)):
             if random.uniform(0, 1) < mutate_pct:
@@ -318,10 +318,13 @@ class Search:
         return Speciman(breathe_params)
             
     def get_crossover(self, speciman_a, speciman_b):
-        breathe_params_a = speciman_a.breathe_params
-        breathe_params_b = speciman_b.breathe_params
-        crossover_pt = int(random.uniform(0, 1) * N_RODS)
-        breathe_params = breathe_params_a[:crossover_pt] + breathe_params_b[crossover_pt:] 
+        breathe_params_a = copy.deepcopy(speciman_a.breathe_params)
+        breathe_params_b = copy.deepcopy(speciman_b.breathe_params)
+        crossover_pts = sorted([int(random.uniform(0, 1) * N_RODS), 
+                                int(random.uniform(0, 1) * N_RODS)])
+        breathe_params = breathe_params_a[:crossover_pts[0]] + \
+                         breathe_params_b[crossover_pt[0]:crossover_pt[1]] + \
+                         breathe_params_a[crossover_pts[1]:]
         return Speciman(breathe_params)
              
        
@@ -333,7 +336,7 @@ class Search:
             speciman_crossed = self.get_crossover(speciman_a, speciman_b)
             speciman_mutated = self.get_mutation(speciman_crossed)
             offspring += [speciman_mutated]
-        return offspring
+        return offspring + specimen
     
     def run_random(self, n_trials, show_output=True):
         if show_output:
@@ -657,9 +660,9 @@ class VisualizeSearch:
         plt.show()
     
 search_mgr = Search()
-n_trials = 2000
-for i in range(4, 5):
-    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=None)
+n_trials = 500
+for i in range(5, 6):
+    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=6)
     # # df, best_specimen = search_mgr.run_rmhc(100, restart=10)
     results_subdir = 'results/ga'
     df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))

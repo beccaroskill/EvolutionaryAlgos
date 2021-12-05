@@ -21,6 +21,6 @@ if __name__ == "__main__":
     # plt.show()
     df = pd.read_csv('results/dotplot/dots.csv')
     index = df['Index'].to_list()
-    score = df['Distance'].to_list()
+    score = df['Speed'].to_list()
     plt.scatter(index, score, s=0.4)
     plt.show()

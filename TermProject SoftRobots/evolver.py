@@ -12,7 +12,7 @@ import math
 import csv
 import copy
 
-MU = 30
+MU = 100
 SHADOW_COLOR = vector(0.7, 0.7, 0.7)
 SHADOW_HEIGHT = 10**(-5)
 FREQ = 100

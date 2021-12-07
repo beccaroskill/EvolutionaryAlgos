@@ -168,7 +168,7 @@ class Speciman:
         
     def evaluate(self):
         start_p, end_p, T = self.simulate("shadow", self.breathe_params, vis=False, save_gif=False, 
-                                          simulation_time=1, plot_energy=False, drop_height=0.02)
+                                          simulation_time=3, plot_energy=False, drop_height=0.02)
         speed = mag(end_p - start_p) / T
         return speed
                   
@@ -271,7 +271,6 @@ class Speciman:
                 if rod.rod:
                     rod.rod.visible = False    
             end_p = vector(end_x/len(masses), 0, end_z/len(masses))
-                
         return [start_p, end_p, T]
 
 class Search:

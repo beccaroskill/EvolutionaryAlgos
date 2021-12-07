@@ -10,9 +10,10 @@ import pandas as pd
 from pathos.multiprocessing import ProcessPool
 import math
 import csv
+import time
 import copy
 
-MU = 100
+MU = 10
 SHADOW_COLOR = vector(0.7, 0.7, 0.7)
 SHADOW_HEIGHT = 10**(-5)
 FREQ = 100
@@ -176,7 +177,7 @@ class Speciman:
                  plot_energy=True, drop_height=0.1, shadow=True):
     
         floor_y = 0
-        floor_w = 4
+        floor_w = 20
         floor_h = 0.5
         floor_k = 10000
         if vis:
@@ -216,7 +217,10 @@ class Speciman:
                         mass2.update_color(vector(1, 0, 0))
                     rod = MassLink((i, mass1), (j+i+1, mass2), vis=vis)
                     rods += [rod]
-    
+                    
+        # if masses[0].sphere:
+        #     scene.camera.follow(masses[0].sphere)
+        
         Ls_rest = [rod.L_rest for rod in rods]
         cubes = [(masses, rods, Ls_rest)]
         
@@ -231,7 +235,9 @@ class Speciman:
                 start_z += mass.pos.z
             start_p = vector(start_x/len(masses), 0, start_z/len(masses))
         
+        start = time.time()
         while T < simulation_time:
+
             for cube_i, cube in enumerate(cubes):
                 masses, rods, Ls_rest = cube
                 for i, mass in enumerate(masses):
@@ -258,7 +264,8 @@ class Speciman:
                     rod.L_rest = L_rest + b * math.sin(FREQ * T + c) 
                     rod.k = k
             T += dt
-            print(T)
+        print(time.time() - start)                
+
         for cube_i, cube in enumerate(cubes):
             masses, rods, Ls_rest = cube
             end_x, end_z = [0, 0]

@@ -315,9 +315,9 @@ class Search:
                               random.uniform(*self.b_dist),
                               random.uniform(*self.c_dist)) 
                 breathe_params[i] = new_params
-        print('Difference:', sum([1 for i in range(3) \
-                                    for j in range(len(breathe_params)) \
-                                    if breathe_params[j][i] != speciman.breathe_params[j][i]]))
+      #  print('Difference:', sum([1 for i in range(3) \
+      #                              for j in range(len(breathe_params)) \
+      #                              if breathe_params[j][i] != speciman.breathe_params[j][i]]))
         return Speciman(breathe_params)
             
     def get_crossover(self, speciman_a, speciman_b):

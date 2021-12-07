@@ -168,7 +168,7 @@ class Speciman:
         
     def evaluate(self):
         start_p, end_p, T = self.simulate("shadow", self.breathe_params, vis=False, save_gif=False, 
-                                          simulation_time=0.5, plot_energy=False, drop_height=0.02)
+                                          simulation_time=1, plot_energy=False, drop_height=0.02)
         speed = mag(end_p - start_p) / T
         return speed
                   
@@ -315,6 +315,9 @@ class Search:
                               random.uniform(*self.b_dist),
                               random.uniform(*self.c_dist)) 
                 breathe_params[i] = new_params
+        print('Difference:', sum([1 for i in range(3) \
+                                    for j in range(len(breathe_params)) \
+                                    if breathe_params[j][i] != speciman.breathe_params[j][i]]))
         return Speciman(breathe_params)
             
     def get_crossover(self, speciman_a, speciman_b):
@@ -502,8 +505,8 @@ class Search:
         all_best_specimen[-1] = best_speciman
         return (trials_df, all_best_specimen)
     
-    def run_ga_parallel(self, n_trials, n_pop=100, num_nodes=4, plot=True,
-                        parallel=True):
+    def run_ga_parallel(self, n_trials, n_pop=100, top_k=30, num_nodes=4, plot=True,
+                        parallel=True, trial_name=None):
         # Prep data storage for trials
         num_gens = int(n_trials / n_pop)
         pop_specimen = [self.get_random_speciman() for i in range(n_pop)]
@@ -512,7 +515,6 @@ class Search:
         best_specimen = [None]
         best_speciman = None
         
-        top_k = 10
         dots = []
         with ProcessPool(nodes=num_nodes) as pool:
             for i in range(num_gens):
@@ -535,6 +537,7 @@ class Search:
                         best_specimen += [None]
                 # Selection
                 ordering = np.argsort(pop_scores).astype(int)
+                ordering = ordering[::-1]
                 top_specimen = [speciman for i, speciman in enumerate(pop_specimen)
                                 if i in ordering[:top_k]]
                 # Reproduction
@@ -554,7 +557,7 @@ class Search:
                                   'best_scores': best_scores})
         best_specimen[-1] = best_speciman
         
-        with open("results/dotplot/dots.csv", mode="w") as csv_file:
+        with open("results/dotplot/dots_i{}.csv".format(trial_name), mode="w") as csv_file:
             csvwriter = csv.writer(csv_file)
             csvwriter.writerow(['Index', 'Speed'])
             csvwriter.writerows(dots)
@@ -663,7 +666,8 @@ class VisualizeSearch:
 search_mgr = Search()
 n_trials = 10000
 for i in range(5, 6):
-    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=None)
+    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=None, 
+                                                   n_pop=100, top_k=30, trial_name=i)
     # # df, best_specimen = search_mgr.run_rmhc(100, restart=10)
     results_subdir = 'results/ga'
     df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))

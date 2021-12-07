@@ -258,7 +258,7 @@ class Speciman:
                     rod.L_rest = L_rest + b * math.sin(FREQ * T + c) 
                     rod.k = k
             T += dt
-
+            print(T)
         for cube_i, cube in enumerate(cubes):
             masses, rods, Ls_rest = cube
             end_x, end_z = [0, 0]

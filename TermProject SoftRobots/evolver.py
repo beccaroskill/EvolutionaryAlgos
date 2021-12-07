@@ -166,13 +166,13 @@ class Speciman:
     def __init__(self, breathe_params):
         self.breathe_params = breathe_params
         
-    def evaluate(self):
-        start_p, end_p, T = self.simulate("shadow", self.breathe_params, vis=False, save_gif=False, 
-                                          simulation_time=3, plot_energy=False, drop_height=0.02)
+    def evaluate(self, sim_time):
+        start_p, end_p, T = self.simulate("shadow", vis=False, save_gif=False, 
+                                          simulation_time=sim_time, plot_energy=False, drop_height=0.02)
         speed = mag(end_p - start_p) / T
         return speed
                   
-    def simulate(self, name, breathe_params, vis=True, save_gif=True, simulation_time=0.05, 
+    def simulate(self, name, vis=True, save_gif=True, simulation_time=0.05, 
                  plot_energy=True, drop_height=0.1, shadow=True):
     
         floor_y = 0
@@ -252,7 +252,7 @@ class Speciman:
                     Fs += default_Fs
                     mass.update_a(Fs)
                     mass.time_step(dt)
-                for L_rest, params, rod in zip(Ls_rest, breathe_params, rods):
+                for L_rest, params, rod in zip(Ls_rest, self.breathe_params, rods):
                     k, b, c = params
                     rod.update_link(*[masses[i] for i in rod.mass_indices])
                     rod.L_rest = L_rest + b * math.sin(FREQ * T + c) 
@@ -505,7 +505,7 @@ class Search:
         return (trials_df, all_best_specimen)
     
     def run_ga_parallel(self, n_trials, n_pop=100, top_k=30, num_nodes=4, plot=True,
-                        parallel=True, trial_name=None):
+                        parallel=True, trial_name=None, sim_time=1):
         # Prep data storage for trials
         num_gens = int(n_trials / n_pop)
         pop_specimen = [self.get_random_speciman() for i in range(n_pop)]
@@ -519,9 +519,10 @@ class Search:
             for i in range(num_gens):
                 # Evaluate population
                 if parallel:
-                    pop_scores = pool.map(Speciman.evaluate, pop_specimen)
+                    pop_scores = pool.map(Speciman.evaluate, pop_specimen, 
+                                          [sim_time for i in range(len(pop_specimen))])
                 else:
-                    pop_scores = [p.evaluate() for p in pop_specimen] # unparallelize
+                    pop_scores = [p.evaluate(sim_time) for p in pop_specimen] # unparallelize
                 # Run to get dot plot data
                 for score in pop_scores:
                     dots.append([i, score])
@@ -662,20 +663,4 @@ class VisualizeSearch:
         anim.save(save_path, writer=writergif)
         plt.show()
     
-search_mgr = Search()
-n_trials = 10000
-for i in range(5, 6):
-    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=None, 
-                                                   n_pop=100, top_k=30, trial_name=i)
-    # # df, best_specimen = search_mgr.run_rmhc(100, restart=10)
-    results_subdir = 'results/ga'
-    df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))
-    # expression_summary = '{}, MSE: {}'.format(best_specimen[-1].to_expr(),
-    #                                           df['best_scores'].to_list()[-1])
-    df_spec = pd.DataFrame(best_specimen[-1].breathe_params, columns=['k', 'b', 'c'])
-    df_spec.to_csv('{}/n{}_i{}_spec.csv'.format(results_subdir, n_trials, i))
-    # print(expression_summary)
-    # plt.figure(figsize=(6, 6))
-    # VisualizeSearch.plot_f(best_specimen[-1], dataset)
-    # plt.savefig('{}/n{}_i{}.png'.format(results_subdir, n_trials, i), dpi=200)
-    # plt.show() 
+

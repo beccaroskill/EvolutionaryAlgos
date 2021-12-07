@@ -3,10 +3,10 @@ import csv
 import pandas as pd
 
 search_mgr = Search()
-n_trials = 200
+n_trials = 10000
 for i in range(5, 6):
-    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=None, n_pop=2, 
-                                                   top_k=1, trial_name=i, sim_time=0.4)
+    df, best_specimen = search_mgr.run_ga_parallel(n_trials, num_nodes=None, n_pop=100, 
+                                                   top_k=30, trial_name=i, sim_time=0.5)
     results_subdir = 'results/ga'
     df.to_csv('{}/n{}_i{}.csv'.format(results_subdir, n_trials, i))
     for j in range(30, len(best_specimen)):

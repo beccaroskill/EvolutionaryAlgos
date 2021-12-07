@@ -3,7 +3,7 @@ import csv
 import pandas as pd
 
 n_trials = 10000
-i = 5
+i = 2
 specs_csv = 'results/ga/n{}_i{}_spec.csv'.format(n_trials, i)
 specs_df = pd.read_csv(specs_csv)
 breathe_params = specs_df[['k', 'b', 'c']].values

@@ -12,7 +12,7 @@ import math
 import csv
 import copy
 
-MU = 1
+MU = 30
 SHADOW_COLOR = vector(0.7, 0.7, 0.7)
 SHADOW_HEIGHT = 10**(-5)
 FREQ = 100
@@ -178,7 +178,7 @@ class Speciman:
         floor_y = 0
         floor_w = 4
         floor_h = 0.5
-        floor_k = 200000
+        floor_k = 10000
         if vis:
             wallB = box (pos=vector(0, -floor_h/2 + floor_y, 0), 
                          size=vector(-floor_w/2, floor_h, -floor_w/2),  color=color.white)

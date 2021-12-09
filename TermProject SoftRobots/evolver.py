@@ -13,7 +13,7 @@ import csv
 import time
 import copy
 
-MU = 10
+MU = 5
 SHADOW_COLOR = vector(0.7, 0.7, 0.7)
 SHADOW_HEIGHT = 10**(-5)
 FREQ = 100
@@ -264,7 +264,6 @@ class Speciman:
                     rod.L_rest = L_rest + b * math.sin(FREQ * T + c) 
                     rod.k = k
             T += dt
-        print(time.time() - start)                
 
         for cube_i, cube in enumerate(cubes):
             masses, rods, Ls_rest = cube

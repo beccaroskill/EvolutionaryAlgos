@@ -184,7 +184,6 @@ class Speciman:
             wallB = box (pos=vector(0, -floor_h/2 + floor_y, 0), 
                          size=vector(-floor_w/2, floor_h, -floor_w/2),  color=color.white)
         
-        scene.camera.pos = vector(0.12, 0.324885, 1.17934)
         
         cube_ps = [vector(0, drop_height, 0.7),
                    vector(0.2, drop_height, 0.7),]   

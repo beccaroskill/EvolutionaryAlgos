@@ -168,7 +168,7 @@ class Speciman:
         self.breathe_params = breathe_params
         
     def evaluate(self, sim_time):
-        start_p, end_p, T = self.simulate("shadow", vis=False, save_gif=False, 
+        start_p, end_p, T = self.simulate("shadow", vis=True, save_gif=False, 
                                           simulation_time=sim_time, plot_energy=False, drop_height=0.02)
         speed = mag(end_p - start_p) / T
         return speed
@@ -186,7 +186,7 @@ class Speciman:
         
         
         cube_ps = [vector(0, drop_height, 0.7),
-                   vector(0.2, drop_height, 0.7),]   
+                   vector(0.2, drop_height, 0.7)]   
         
         masses = []
         rods = []
@@ -204,23 +204,37 @@ class Speciman:
                       Mass(cube_m/6, cube_p + vector(cube_l, cube_l, cube_l), mass_r, cube_rotation, vis=vis),
                       Mass(cube_m/6, cube_p + vector(cube_l, 0, 0), mass_r, cube_rotation, vis=vis),
                       Mass(cube_m/6, cube_p + vector(cube_l, cube_l, 0), mass_r, cube_rotation, vis=vis)]
-            
-        intercube_links = [(i, j) for i in range(8) for j in range(8,16) if i>3 and j<12]
         
-        for i, mass1 in enumerate(masses):
-            for j, mass2 in enumerate(masses[i+1:]):
-                if (i < 8 and j+i+1 < 8) or (i >= 8 and j+i+1 >= 8) \
-                    or (i, j+i+1) in intercube_links:
-                    if (i, j+i+1) in intercube_links:
-                        mass1.update_color(vector(1, 0, 0))
-                        mass2.update_color(vector(1, 0, 0))
-                    rod = MassLink((i, mass1), (j+i+1, mass2), vis=vis)
-                    rods += [rod]
+        intracube_links = [(i, j) for i in range(0,8) for j in range(0,8)] + \
+                          [(i, j) for i in range(8,16) for j in range(8,16)]
+        intercube_links = [(i, j) for i in range(4,8) for j in range(8,12)]
+        pre_omit_links = intracube_links + intercube_links
+        final_links = [link if self.breathe_params[i] is not None else None \
+                            for i, link in enumerate(pre_omit_links)]
+        
+        masses_final = []
+        for link_no, link in enumerate(final_links):
+            if link is None:
+                rod = None
+            else:
+                i, j = link
+                rod = MassLink((i, masses[i]), (j, masses[j]), vis=vis)
+                if not masses[i] in masses_final:
+                    masses_final += [masses[i]]                
+                if not masses[j] in masses_final:
+                    masses_final += [masses[j]]
+            rods += [rod]
+        
+        for mass in masses:
+            if mass not in masses_final:
+                if mass.sphere:
+                    mass.sphere.visible = False       
+        masses = masses_final
                     
         # if masses[0].sphere:
         #     scene.camera.follow(masses[0].sphere)
         
-        Ls_rest = [rod.L_rest for rod in rods]
+        Ls_rest = [None if rod is None else rod.L_rest for rod in rods]
         cubes = [(masses, rods, Ls_rest)]
         
         dt = 0.0001
@@ -234,7 +248,6 @@ class Speciman:
                 start_z += mass.pos.z
             start_p = vector(start_x/len(masses), 0, start_z/len(masses))
         
-        start = time.time()
         while T < simulation_time:
 
             for cube_i, cube in enumerate(cubes):
@@ -243,7 +256,7 @@ class Speciman:
                     default_Fs = [Mass.G * mass.mass]
                     Fs = []
                     for rod in rods:
-                        if i in rod.mass_indices:
+                        if rod is not None and i in rod.mass_indices:
                             Fs += [rod.get_force(mass)]
                             # if plot_energy:
                             #     PE += rod.get_potential(mass)
@@ -257,11 +270,13 @@ class Speciman:
                     Fs += default_Fs
                     mass.update_a(Fs)
                     mass.time_step(dt)
+                print(sum([1 for x in rods if x is None]), len(rods))
                 for L_rest, params, rod in zip(Ls_rest, self.breathe_params, rods):
-                    k, b, c = params
-                    rod.update_link(*[masses[i] for i in rod.mass_indices])
-                    rod.L_rest = L_rest + b * math.sin(FREQ * T + c) 
-                    rod.k = k
+                    if params is not None:
+                        k, b, c = params
+                        rod.update_link(*[masses[i] for i in rod.mass_indices])
+                        rod.L_rest = L_rest + b * math.sin(FREQ * T + c) 
+                        rod.k = k
             T += dt
 
         for cube_i, cube in enumerate(cubes):
@@ -281,7 +296,7 @@ class Speciman:
 class Search:
 
     # min, max of uniform distribution for number of operations
-    default_k_dist = [2000, 10000]
+    default_k_dist = [10000, 15000]
     
     # min, max of uniform distribution for coefficients
     default_b_dist = [0, 0.025]
@@ -305,19 +320,32 @@ class Search:
             self.c_dist = c_dist
     
     def get_random_speciman(self):    
+        intracube_links = [(i, j) for i in range(0,8) for j in range(0,8)] + \
+                          [(i, j) for i in range(8,16) for j in range(8,16)]
+        intercube_links = [(i, j) for i in range(4,8) for j in range(8,12)]
+        pre_omit_links = intracube_links + intercube_links
+        omit_pct = random.uniform(0, 0.5)
+        links_omitted = [link for link in pre_omit_links \
+                         if random.uniform(0,1)<omit_pct]
         breathe_params = [(random.uniform(*self.k_dist),
                            random.uniform(*self.b_dist),
-                           random.uniform(*self.c_dist)) for i in range(N_RODS)]
+                           random.uniform(*self.c_dist)) \
+                          if link not in links_omitted else None \
+                          for link in pre_omit_links]
         return Speciman(breathe_params)
 
     def get_mutation(self, speciman):   
         breathe_params = copy.deepcopy(speciman.breathe_params)
         mutate_pct = 0.1
+        omit_pct = 0.25
         for i in range(len(breathe_params)):
             if random.uniform(0, 1) < mutate_pct:
-                new_params = (random.uniform(*self.k_dist), 
-                              random.uniform(*self.b_dist),
-                              random.uniform(*self.c_dist)) 
+                if random.uniform(0, 1) < omit_pct:
+                    new_params = None
+                else:
+                    new_params = (random.uniform(*self.k_dist), 
+                                  random.uniform(*self.b_dist),
+                                  random.uniform(*self.c_dist)) 
                 breathe_params[i] = new_params
       #  print('Difference:', sum([1 for i in range(3) \
       #                              for j in range(len(breathe_params)) \
@@ -333,6 +361,9 @@ class Search:
                          breathe_params_b[crossover_pts[0]:crossover_pts[1]] + \
                          breathe_params_a[crossover_pts[1]:]
         return Speciman(breathe_params)
+    
+    def get_morph(self, speciman):
+        pass
              
        
     def reproduce(self, specimen, n_offspring):

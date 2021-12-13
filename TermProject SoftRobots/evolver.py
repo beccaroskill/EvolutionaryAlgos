@@ -281,7 +281,7 @@ class Speciman:
 class Search:
 
     # min, max of uniform distribution for number of operations
-    default_k_dist = [500000, 1500000]
+    default_k_dist = [2000, 10000]
     
     # min, max of uniform distribution for coefficients
     default_b_dist = [0, 0.025]
